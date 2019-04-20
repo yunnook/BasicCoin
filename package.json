@@ -1,0 +1,12 @@
+{
+  "name": "BasicCoin",
+  "version": "1.0.0",
+  "description": "BasicCoin made by NodeJs",
+  "main": "src/server.js",
+  "repository": "https://github.com/yunnook/BasicCoin.git",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "crypto-js": "^3.1.9-1"
+  }
+}
