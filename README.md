@@ -1,2 +1,2 @@
 # BasicCoin
-BasicCoin made in NodeJS
+BasicCoin made in NodeJS (referd nomad coin).
