@@ -7,6 +7,7 @@
   "license": "MIT",
   "private": false,
   "dependencies": {
+<<<<<<< HEAD
     "body-parser": "^1.18.3",
     "crypto-js": "^3.1.9-1",
     "express": "^4.16.4",
@@ -16,5 +17,8 @@
   },
   "scripts": {
     "dev": "nodemon src/server.js"
+=======
+    "crypto-js": "^3.1.9-1"
+>>>>>>> c8086dcd47bb000cc614b4da8e4b340448aa35a0
   }
 }

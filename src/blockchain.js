@@ -1,5 +1,9 @@
 const CryptoJS = require("crypto-js");
 const hexToBinary = require("hex-to-binary");
+
+const BLOCK_GENERATION_INTERVAL = 10;
+const DIFFICULTY_ADJUSTMENT_INTERVAL = 10;
+
 class Block{
     constructor(index, hash, previousHash, timestamp, data, difficulty, nonce) {
         this.index = index;
@@ -41,7 +45,7 @@ const getBlockChain = () => blockchain;
 
 const createHash = (index,previousHash,timestamp,data, difficulty, nonce) => 
     CryptoJS.SHA256(
-        index + previousHash + timestamp + JSON.stringify(data)//data를 string으로 바꿔주는거 int나 이런것도 TODO: .toString이랑 뭐가 다름?
+        index + previousHash + timestamp + JSON.stringify(data) + difficulty + nonce//data를 string으로 바꿔주는거 int나 이런것도 TODO: .toString이랑 뭐가 다름?
     ).toString();
 
 
@@ -51,12 +55,13 @@ const createNewBlock = data => {
     const newTimeStamp = getTimeStamp()
     //const newHash = createHash(newBlockIndex, previousBlock.hash, newTimeStamp, data);
     console.log(newHash);
+    const difficulty = findDifficulty(getBlockChain());
     const newBlock = new findBlock(
         newBlockIndex,
         previousBlock.hash,
         newTimeStamp,
         data,
-        5
+        difficulty
     );
     addBlockToChain(newBlock);
     require("./p2p").broadcastNewBlock(); // 블록 생성하면 브로드캐스팅해서 알려주는거임.
@@ -64,8 +69,30 @@ const createNewBlock = data => {
 };
 // 여기까지 새로운 블록을 생성하는거고 블록채인 안에서 블록이 생성되는거는 아님.
 
-const findBlock = (index, previousHash, timestamp, data, difficulty) => {
+const findDifficulty = (blockchain) =>{
+    const newestBlock = blockchain(blockchain.length - 1);
+    if(newestBlock.index % DIFFICULTY_ADJUSTMENT_INTERVAL === 0 && newestBlock.index !== 0){
+        //calculate new difficulty
+        return calculateNewDifficulty(newestBlock, getBlockChain());
+    }else {
+        return newestBlock.difficulty;
+    }
+};
+
+const calculateNewDifficulty = (newestBlock, blockchain) =>{
+    const lastCalculatedBlock = blockchain(blockchain.length - DIFFICULTY_ADJUSTMENT_INTERVAL);
+    const timeExpected = BLOCK_GENERATION_INTERVAL * DIFFICULTY_ADJUSTMENT_INTERVAL;
+    const timeTaken = newestBlock.timestamp - lastCalculatedBlock.timestamp;
+    if(timeTaken < timeExpected/2){
+        return lastCalculatedBlock.difficulty + 1;
+    }else if(timeTaken > timeExpected *2 ){
+        return lastCalculatedBlock.difficulty - 1;
+    }
+};
+
+const findBlock = (index, previousHash, timestamp, data, difficulty,nonce) => {
     let nonce = 0;
+    console.log(`current nonce`,nonce);
     while(true){
         const hash = createHash{
             index,
@@ -76,7 +103,8 @@ const findBlock = (index, previousHash, timestamp, data, difficulty) => {
             nonce
         };
         //to do: check amount of zeros(hashMatchesDifficulty)
-        if(){
+        if(hashMatchesDifficulty(hash, difficulty)){
+            return new Block(index, hash, previousBlock, timestamp, data, difficulty, nonce);
 
         }else{
             nonce++;
@@ -87,9 +115,15 @@ const findBlock = (index, previousHash, timestamp, data, difficulty) => {
 const hashMatchesDifficulty = (hash,difficulty) =>{
     const hashInBinary = hexToBinary(hash);
     const requiredZeros = "0".repeat(difficulty);
+    console.log(`Tring difficulty:`,difficulty,"with hash",hash);
+    return hashInBinary.startsWith(requiredZeros);
 }
 
-const getBlockHash = (block) => createHash(block.index, block.previousHash, block.timestamp, block.data);
+const getBlockHash = (block) => createHash(block.index, block.previousHash, block.timestamp, block.data, block.difficulty, block.nonce);
+
+// const isTimeStampValid = (newBlock, previousBlock) =>{
+     
+// }
 
 //새로 추가되는 블록의 값들이 유효한 값들인지 확인하는 함수임
 const isBlockValid = (candidateBlock, latestBlock) => {
@@ -109,6 +143,7 @@ const isBlockValid = (candidateBlock, latestBlock) => {
         return false;
     }
     return true;
+
 };
 
 // 블록의 구조가 유효한지 확인하는거
